@@ -1,0 +1,96 @@
+require('dotenv').config();
+const express = require('express');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const cors = require('cors');
+const axios = require('axios');
+const qs = require('qs'); // Library to format data like a form
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public')); 
+
+// 1. CONFIG
+app.get('/config', (req, res) => {
+    res.json({
+        stripeKey: process.env.STRIPE_PUBLISHABLE_KEY,
+        brandColor: "#FFA500"
+    });
+});
+
+// 2. CREATE PAYMENT
+app.post('/create-checkout-session', async (req, res) => {
+    try {
+        const { deviceId } = req.body;
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: `Powerbank Rental (${deviceId})`,
+                            description: '$20 Security Deposit (Refunded upon return)',
+                        },
+                        unit_amount: 60, // $0.5
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'payment',
+            success_url: `${req.protocol}://${req.get('host')}/success.html?session_id={CHECKOUT_SESSION_ID}&deviceId=${deviceId}`,
+            cancel_url: `${req.protocol}://${req.get('host')}/index.html`,
+        });
+        res.json({ id: session.id });
+    } catch (error) {
+        console.error("Stripe Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. UNLOCK DEVICE (Updated for Bajie API)
+app.post('/unlock-device', async (req, res) => {
+    const { sessionId, deviceId } = req.body;
+
+    try {
+        // A. Verify Payment
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        if (session.payment_status !== 'paid') {
+            return res.status(400).json({ error: 'Payment incomplete' });
+        }
+
+        console.log(`Payment confirmed. Unlocking device ${deviceId}...`);
+
+        // B. Send Signal to Hardware
+        // The API requires data in "application/x-www-form-urlencoded" format
+        const data = qs.stringify({
+            'deviceId': deviceId,
+            'callbackURL': `${req.protocol}://${req.get('host')}/api/callback` // Placeholder for now
+        });
+
+        const config = {
+            method: 'post',
+            url: process.env.HARDWARE_API_URL,
+            headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+                // This handles the "Basic Auth" requirement automatically
+                'Authorization': 'Basic ' + Buffer.from(process.env.HARDWARE_USER + ':' + process.env.HARDWARE_PASS).toString('base64')
+            },
+            data: data
+        };
+
+        const hardwareResponse = await axios(config);
+        
+        console.log("Hardware Response:", hardwareResponse.data);
+        res.json({ success: true, message: "Device Unlocked!", data: hardwareResponse.data });
+
+    } catch (error) {
+        console.error("Unlock Error:", error.response ? error.response.data : error.message);
+        res.status(500).json({ error: "Unlock failed" });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Volt Server running on http://localhost:${PORT}`);
+});

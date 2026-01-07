@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volt - Powerbank Sharing</title>
+    <style>
+        /* BRANDING CONFIG */
+        :root {
+            --primary: #FFA500; /* Client Orange */
+            --white: #FFFFFF;
+            --dark: #333333;
+            --gray: #F4F4F4;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* close to modern fonts */
+            margin: 0;
+            padding: 0;
+            background-color: var(--gray);
+            color: var(--dark);
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Mobile Container Simulation */
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--white);
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 20px;
+            text-align: center;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Map Section */
+        .map-placeholder {
+            margin: 20px;
+            height: 200px;
+            background-color: #e0e0e0;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            background-image: url('https://maps.googleapis.com/maps/api/staticmap?center=40.714728,-73.998672&zoom=14&size=400x200&key=YOUR_API_KEY'); /* This is just a dummy background for mockup */
+            background-size: cover;
+            position: relative;
+        }
+        
+        .map-pin {
+            background: var(--primary);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Station Info */
+        .station-card {
+            margin: 0 20px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 15px;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .station-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .station-subtitle {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .battery-slots {
+            display: flex;
+            gap: 10px;
+        }
+
+        .slot {
+            width: 30px;
+            height: 45px;
+            background-color: #ddd;
+            border-radius: 5px;
+        }
+        .slot.active {
+            background-color: var(--primary);
+        }
+
+        /* Pricing */
+        .price-tag {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .price-big {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .price-sub {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Action Button */
+        .btn-container {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .rent-btn {
+            background-color: var(--dark);
+            color: var(--white);
+            width: 90%;
+            max-width: 360px;
+            padding: 18px;
+            border-radius: 50px;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-icons {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <div class="logo">VOLT</div>
+            <div style="font-size: 12px; margin-top: 5px;">Powerbank Sharing</div>
+        </div>
+
+        <div class="map-placeholder">
+            <div class="map-pin">📍 You are here</div>
+        </div>
+
+        <div class="station-card">
+            <div class="station-title">Station #8492</div>
+            <div class="station-subtitle">Central Station Entrance</div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 12px; color: #888; margin-bottom: 5px;">Available Batteries</div>
+                    <div class="battery-slots">
+                        <div class="slot active"></div>
+                        <div class="slot active"></div>
+                        <div class="slot active"></div>
+                        <div class="slot active"></div>
+                        <div class="slot"></div>
+                        <div class="slot"></div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 24px; font-weight: bold; color: var(--primary);">4</span>
+                    <span style="font-size: 12px; color: #888;">/6</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="price-tag">
+            <div class="price-big">$1.00 <span style="font-size: 16px; color: #333;">/ hour</span></div>
+            <div class="price-sub">Max cap $10.00 / day</div>
+        </div>
+
+        <div class="btn-container">
+            <button class="rent-btn">
+                <span>Rent Powerbank</span>
+                <span class="payment-icons">Pay GPay 💳</span>
+            </button>
+        </div>
+
+    </div>
+
+</body>
+</html>
