@@ -64,24 +64,26 @@
 
     <script src="https://js.stripe.com/v3/"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+   <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. SETUP THE MAP (Leaflet)
-        // Default to Berlin (or client city)
-        var map = L.map('map').setView([52.5200, 13.4050], 14); 
+        // 1. GET STATION ID FROM URL (Simulating the QR Code)
+        // If the URL is volt-app.com?id=STATION-99, we use "STATION-99"
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentStationId = urlParams.get('id') || 'TEST-STATION-01';
 
+        // Update the UI to show the correct Station Name
+        document.querySelector('.station-title').innerText = "Station #" + currentStationId;
+
+        // 2. SETUP THE MAP
+        var map = L.map('map').setView([52.5200, 13.4050], 14); 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
-
-        // Add Current Station Pin
         L.marker([52.5200, 13.4050]).addTo(map)
-            .bindPopup("<b>Station #8492</b><br>You are here.").openPopup();
+            .bindPopup("<b>" + currentStationId + "</b><br>You are here.").openPopup();
 
-        // Add a "Fake" Return Station nearby (to show functionality)
-        L.marker([52.5220, 13.4080]).addTo(map)
-            .bindPopup("<b>Station #9911</b><br>4 Empty Slots");
-
-        // 2. STRIPE LOGIC (Same as before)
+        // 3. STRIPE LOGIC
         fetch('/config')
             .then(res => res.json())
             .then(config => {
@@ -90,10 +92,12 @@
 
                 rentBtn.addEventListener('click', () => {
                     rentBtn.innerText = "Processing...";
+                    
+                    // Send the DYNAMIC ID to the backend
                     fetch('/create-checkout-session', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ deviceId: 'TEST-STATION-01' })
+                        body: JSON.stringify({ deviceId: currentStationId })
                     })
                     .then(response => response.json())
                     .then(session => stripe.redirectToCheckout({ sessionId: session.id }))
