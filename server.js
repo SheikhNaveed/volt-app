@@ -90,6 +90,19 @@ app.post('/unlock-device', async (req, res) => {
     }
 });
 
+// 4. HANDLE RETURN & PRICING (Webhook)
+// This triggers when the machine says "Powerbank Returned"
+app.post('/api/callback', (req, res) => {
+    console.log("🔔 HARDWARE EVENT RECEIVED:");
+    console.log("Data:", req.body); 
+
+    // TODO: In the future, you will save this to a database
+    // For now, we just print it to the Render Logs so you can see it works
+    
+    // We MUST reply "success" or the machine will keep sending the message
+    res.json({ result: "success" });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Volt Server running on http://localhost:${PORT}`);
