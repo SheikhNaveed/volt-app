@@ -20,7 +20,7 @@
         <div id="status" class="status">Connecting to station...</div>
     </div>
 
-    <script>
+<script>
         // 1. Get the Info from the URL
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get('session_id');
@@ -28,8 +28,15 @@
         const statusDiv = document.getElementById('status');
         const loader = document.getElementById('loader');
 
-        if (sessionId && deviceId) {
-            // 2. Tell Backend to Unlock
+        // 2. SAFETY CHECK: Did we already unlock this specific session?
+        // This prevents the "Refresh" bug
+        if (localStorage.getItem('unlocked_' + sessionId)) {
+            console.log("Block: This session was already used.");
+            statusDiv.innerHTML = "✅ <b>Device Already Unlocked</b><br>Enjoy your charge!";
+            loader.style.display = 'none';
+        } 
+        else if (sessionId && deviceId) {
+            // 3. New Session? Okay, tell Backend to Unlock
             fetch('/unlock-device', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -37,8 +44,11 @@
             })
             .then(res => res.json())
             .then(data => {
-                // 3. Show Success
+                // 4. Show Success AND Set the Safety Lock
                 if (data.success) {
+                    // Mark this session as "DONE" in the browser memory
+                    localStorage.setItem('unlocked_' + sessionId, 'true');
+
                     statusDiv.innerHTML = "✅ <b>Device Unlocked!</b><br>Please take your powerbank.";
                     loader.style.display = 'none';
                 } else {
@@ -51,5 +61,6 @@
             });
         }
     </script>
+
 </body>
 </html>
