@@ -3,87 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Volt - Powerbank Sharing</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Volt - Rent Powerbank</title>
     
     <style>
-        :root { --primary: #FFA500; --white: #FFFFFF; --dark: #333333; --gray: #F4F4F4; }
-        body { font-family: 'Helvetica Neue', sans-serif; margin: 0; background-color: var(--gray); display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 450px; background-color: var(--white); min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        :root { --primary: #FFA500; --white: #FFFFFF; --dark: #222222; --gray: #F8F9FA; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: var(--gray); display: flex; justify-content: center; height: 100vh; overflow: hidden; }
         
-        /* Header */
-        .header { background-color: var(--primary); color: var(--white); padding: 20px; text-align: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; z-index: 1000; position: relative;}
-        .logo { font-size: 24px; font-weight: bold; letter-spacing: 1px; }
+        .app-container { width: 100%; max-width: 450px; background-color: var(--white); height: 100%; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        
+        /* Clean Header */
+        .header { background: var(--white); padding: 25px 20px; text-align: center; border-bottom: 1px solid #eee; }
+        .logo { font-size: 28px; font-weight: 800; color: var(--dark); letter-spacing: -1px; }
+        .logo span { color: var(--primary); }
 
-        /* REAL MAP CONTAINER */
-        #map { height: 35vh; width: 100%; z-index: 1; margin-top: -20px; }
+        /* Main Content - Centered */
+        .content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
 
-        /* Station Info */
-        .station-card { margin: -20px 20px 0 20px; padding: 20px; border-radius: 15px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; z-index: 1000; }
-        .station-title { font-size: 18px; font-weight: bold; }
-        .battery-slots { display: flex; gap: 8px; margin-top: 10px; }
-        .slot { width: 25px; height: 40px; background-color: #eee; border-radius: 4px; }
-        .slot.active { background-color: var(--primary); }
+        .station-icon { font-size: 60px; margin-bottom: 20px; }
+        .station-title { font-size: 24px; font-weight: 700; color: var(--dark); margin-bottom: 5px; }
+        .station-subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
 
-        /* Pricing & Button */
-        .price-tag { text-align: center; margin-top: auto; padding-top: 20px; }
-        .rent-btn { background-color: var(--dark); color: var(--white); width: 90%; padding: 18px; border-radius: 50px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; margin: 20px auto; display: flex; justify-content: space-between; align-items: center; }
+        /* Battery Visualization */
+        .battery-row { display: flex; gap: 8px; margin-bottom: 40px; }
+        .slot { width: 30px; height: 50px; background-color: #eee; border-radius: 6px; position: relative; }
+        .slot.active { background-color: var(--dark); }
+        .slot.active::after { content: '⚡'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; color: var(--primary); }
+
+        /* Pricing Card */
+        .price-card { background: var(--gray); padding: 20px; border-radius: 16px; width: 85%; margin-bottom: 20px; }
+        .price-big { font-size: 36px; font-weight: 800; color: var(--dark); }
+        .price-unit { font-size: 16px; color: #666; font-weight: normal; }
+        .price-details { font-size: 13px; color: #888; margin-top: 5px; }
+
+        /* Big Button */
+        .action-area { padding: 30px; width: 100%; box-sizing: border-box; }
+        .rent-btn { background-color: var(--primary); color: var(--white); width: 100%; padding: 20px; border-radius: 16px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(255, 165, 0, 0.3); transition: transform 0.1s; }
+        .rent-btn:active { transform: scale(0.98); }
+
     </style>
 </head>
 <body>
 
     <div class="app-container">
         <div class="header">
-            <div class="logo">VOLT</div>
-            <div style="font-size: 12px;">Powerbank Sharing</div>
+            <div class="logo">VOLT<span>.</span></div>
         </div>
 
-        <div id="map"></div>
+        <div class="content">
+            <div class="station-icon">🔋</div>
+            <div class="station-title">Station #...</div>
+            <div class="station-subtitle">Scan & Go Rental</div>
 
-        <div class="station-card">
-            <div class="station-title">Station #8492</div>
-            <div style="color: #888; font-size: 14px;">Central Station Entrance</div>
-            <div class="battery-slots">
-                <div class="slot active"></div><div class="slot active"></div><div class="slot active"></div><div class="slot"></div><div class="slot"></div>
+            <div class="battery-row">
+                <div class="slot active"></div>
+                <div class="slot active"></div>
+                <div class="slot active"></div>
+                <div class="slot"></div>
+                <div class="slot"></div>
             </div>
-            <div style="text-align: right; margin-top: -30px; font-weight: bold; color: var(--primary); font-size: 20px;">3/5</div>
+
+            <div class="price-card">
+                <div class="price-big">$1.00 <span class="price-unit">/ hr</span></div>
+                <div class="price-details">Max $10/day • $20 Deposit (Refundable)</div>
+            </div>
         </div>
 
-        <div class="price-tag">
-            <div style="font-size: 32px; font-weight: bold; color: var(--primary);">$1.00 <span style="font-size: 16px; color: #333;">/ hr</span></div>
-            <div style="color: #888; font-size: 12px;">Max $10/day • $20 Deposit</div>
+        <div class="action-area">
+            <button class="rent-btn">Rent Powerbank</button>
+            <div style="text-align: center; margin-top: 15px; color: #ccc; font-size: 12px;">Secure Payment via Stripe 🔒</div>
         </div>
-
-        <button class="rent-btn">
-            <span>Rent Powerbank</span>
-            <span style="font-size: 12px;">Pay GPay 💳</span>
-        </button>
-        <div style="height: 20px;"></div>
     </div>
 
     <script src="https://js.stripe.com/v3/"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-   <script src="https://js.stripe.com/v3/"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. GET STATION ID FROM URL (Simulating the QR Code)
-        // If the URL is volt-app.com?id=STATION-99, we use "STATION-99"
+        // 1. GET STATION ID
         const urlParams = new URLSearchParams(window.location.search);
-        const currentStationId = urlParams.get('id') || 'TEST-STATION-01';
+        const currentStationId = urlParams.get('id') || 'TEST-STATION';
 
-        // Update the UI to show the correct Station Name
+        // Update UI
         document.querySelector('.station-title').innerText = "Station #" + currentStationId;
 
-        // 2. SETUP THE MAP
-        var map = L.map('map').setView([52.5200, 13.4050], 14); 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-        L.marker([52.5200, 13.4050]).addTo(map)
-            .bindPopup("<b>" + currentStationId + "</b><br>You are here.").openPopup();
-
-        // 3. STRIPE LOGIC
+        // 2. STRIPE LOGIC
         fetch('/config')
             .then(res => res.json())
             .then(config => {
@@ -92,8 +92,8 @@
 
                 rentBtn.addEventListener('click', () => {
                     rentBtn.innerText = "Processing...";
+                    rentBtn.style.backgroundColor = "#ccc";
                     
-                    // Send the DYNAMIC ID to the backend
                     fetch('/create-checkout-session', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -104,6 +104,7 @@
                     .catch(err => {
                         console.error(err);
                         rentBtn.innerText = "Error - Try Again";
+                        rentBtn.style.backgroundColor = "red";
                     });
                 });
             });
