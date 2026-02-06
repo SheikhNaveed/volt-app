@@ -11,33 +11,25 @@
         
         .app-container { width: 100%; max-width: 450px; background-color: var(--white); height: 100%; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
         
-        /* Clean Header */
-        .header { background: var(--white); padding: 25px 20px; text-align: center; border-bottom: 1px solid #eee; }
-        .logo { font-size: 28px; font-weight: 800; color: var(--dark); letter-spacing: -1px; }
-        .logo span { color: var(--primary); }
-
-        /* Main Content - Centered */
+        /* Header with SVG Logo */
+        .header { background: var(--white); padding: 20px; text-align: center; border-bottom: 1px solid #eee; display: flex; justify-content: center; align-items: center; }
+        
+        /* Main Content */
         .content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
 
-        .station-icon { font-size: 60px; margin-bottom: 20px; }
-        .station-title { font-size: 24px; font-weight: 700; color: var(--dark); margin-bottom: 5px; }
-        .station-subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
-
-        /* Battery Visualization */
-        .battery-row { display: flex; gap: 8px; margin-bottom: 40px; }
-        .slot { width: 30px; height: 50px; background-color: #eee; border-radius: 6px; position: relative; }
-        .slot.active { background-color: var(--dark); }
-        .slot.active::after { content: '⚡'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; color: var(--primary); }
+        .station-icon { font-size: 80px; margin-bottom: 20px; }
+        .station-title { font-size: 26px; font-weight: 800; color: var(--dark); margin-bottom: 10px; letter-spacing: -0.5px; }
+        .station-subtitle { color: #888; font-size: 15px; margin-bottom: 40px; }
 
         /* Pricing Card */
-        .price-card { background: var(--gray); padding: 20px; border-radius: 16px; width: 85%; margin-bottom: 20px; }
-        .price-big { font-size: 36px; font-weight: 800; color: var(--dark); }
-        .price-unit { font-size: 16px; color: #666; font-weight: normal; }
-        .price-details { font-size: 13px; color: #888; margin-top: 5px; }
+        .price-card { background: var(--gray); padding: 25px; border-radius: 20px; width: 85%; margin-bottom: 30px; }
+        .price-big { font-size: 42px; font-weight: 800; color: var(--dark); }
+        .price-unit { font-size: 18px; color: #666; font-weight: normal; }
+        .price-details { font-size: 13px; color: #888; margin-top: 8px; }
 
         /* Big Button */
-        .action-area { padding: 30px; width: 100%; box-sizing: border-box; }
-        .rent-btn { background-color: var(--primary); color: var(--white); width: 100%; padding: 20px; border-radius: 16px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(255, 165, 0, 0.3); transition: transform 0.1s; }
+        .action-area { padding: 30px; width: 100%; box-sizing: border-box; background: var(--white); }
+        .rent-btn { background-color: var(--primary); color: var(--white); width: 100%; padding: 22px; border-radius: 18px; border: none; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 10px 25px rgba(255, 165, 0, 0.4); transition: transform 0.1s; }
         .rent-btn:active { transform: scale(0.98); }
 
     </style>
@@ -46,21 +38,18 @@
 
     <div class="app-container">
         <div class="header">
-            <div class="logo">VOLT<span>.</span></div>
+            <svg style="height: 35px; width: auto;" viewBox="0 0 39.780106 19.530737" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                <g transform="translate(-85.195831,-138.64166)">
+                    <path d="m 97.66882,145.05781 -5.517886,12.83229 h -1.437216 l -5.517886,-12.83229 h 1.462882 l 4.773612,11.13843 4.773613,-11.13843 z m 7.05777,-0.30797 q 1.38589,0 2.59213,0.53895 1.2319,0.51329 2.13016,1.43722 0.92392,0.89826 1.43721,2.13016 0.53896,1.2319 0.53896,2.61779 0,1.38588 -0.53896,2.61778 -0.51329,1.20624 -1.43721,2.13017 -0.89826,0.89826 -2.13016,1.43721 -1.20624,0.51329 -2.59213,0.51329 -1.38588,0 -2.61778,-0.51329 -1.20624,-0.53895 -2.130165,-1.43721 -0.89826,-0.92393 -1.437216,-2.13017 -0.513292,-1.2319 -0.513292,-2.61778 0,-1.38589 0.513292,-2.61779 0.538956,-1.2319 1.437216,-2.13016 0.923925,-0.92393 2.130165,-1.43722 1.2319,-0.53895 2.61778,-0.53895 z m 0,1.36022 q -1.12924,0 -2.10449,0.4363 -0.97526,0.41063 -1.69386,1.12924 -0.71861,0.71861 -1.154911,1.71953 -0.410634,0.97525 -0.410634,2.07883 0,1.10357 0.410634,2.07883 0.436301,0.97525 1.154911,1.71953 0.7186,0.7186 1.69386,1.1549 0.97525,0.41064 2.10449,0.41064 1.10358,0 2.07883,-0.41064 0.97526,-0.4363 1.69387,-1.1549 0.74427,-0.74428 1.1549,-1.71953 0.4363,-0.97526 0.4363,-2.07883 0,-1.10358 -0.4363,-2.07883 -0.41063,-1.00092 -1.1549,-1.71953 -0.71861,-0.71861 -1.69387,-1.12924 -0.97525,-0.4363 -2.07883,-0.4363 z m 8.72596,-7.46839 h 1.33455 v 16.16868 q 0,0.84693 0.59029,1.43722 0.59029,0.59029 1.43722,0.59029 v 1.33455 q -0.69295,0 -1.3089,-0.25664 -0.61595,-0.25665 -1.07791,-0.71861 -0.4363,-0.46196 -0.71861,-1.07791 -0.25664,-0.61595 -0.25664,-1.3089 z m 4.82493,3.10541 h 1.33456 v 3.36206 h 4.8506 v 1.33456 h -4.8506 v 8.28966 q 0,0.82127 0.59028,1.41155 0.59029,0.59029 1.43722,0.59029 0.82127,0 1.41155,-0.59029 0.59029,-0.59028 0.59029,-1.41155 h 1.33456 q 0,0.69294 -0.25665,1.30889 -0.25665,0.61595 -0.71861,1.07792 -0.46196,0.43629 -1.07791,0.7186 -0.59029,0.25665 -1.28323,0.25665 -0.69294,0 -1.30889,-0.25665 -0.61595,-0.28231 -1.07792,-0.7186 -0.43629,-0.46197 -0.7186,-1.07792 -0.25665,-0.61595 -0.25665,-1.30889 z" fill="#ffa500" />
+                </g>
+            </svg>
         </div>
 
         <div class="content">
             <div class="station-icon">🔋</div>
-            <div class="station-title">Station #...</div>
+            
+            <div class="station-title">Volt Power Bank Station</div>
             <div class="station-subtitle">Scan & Go Rental</div>
-
-            <div class="battery-row">
-                <div class="slot active"></div>
-                <div class="slot active"></div>
-                <div class="slot active"></div>
-                <div class="slot"></div>
-                <div class="slot"></div>
-            </div>
 
             <div class="price-card">
                 <div class="price-big">$1.00 <span class="price-unit">/ hr</span></div>
@@ -76,12 +65,9 @@
 
     <script src="https://js.stripe.com/v3/"></script>
     <script>
-        // 1. GET STATION ID
+        // 1. GET STATION ID (We still need this for the BACKEND, but we don't show it in the UI)
         const urlParams = new URLSearchParams(window.location.search);
         const currentStationId = urlParams.get('id') || 'TEST-STATION';
-
-        // Update UI
-        document.querySelector('.station-title').innerText = "Station #" + currentStationId;
 
         // 2. STRIPE LOGIC
         fetch('/config')
