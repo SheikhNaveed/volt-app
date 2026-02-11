@@ -21,23 +21,20 @@ app.get('/config', (req, res) => {
 // 2. CREATE PAYMENT
 app.post('/create-checkout-session', async (req, res) => {
     try {
-        const { deviceId } = req.body;
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
-            line_items: [
-                {
-                    price_data: {
-                        currency: 'usd',
-                        product_data: {
-                            name: `Powerbank Rental (${deviceId})`,
-                            description: '$20 Security Deposit (Refunded upon return)',
-                        },
-                        unit_amount: 60, // $0.5
+            line_items: [{
+                price_data: {
+                    currency: 'eur', // CHANGED TO EURO
+                    product_data: {
+                        name: 'Power Bank Miete (Station ' + deviceId + ')', // German Name
+                        description: '1,00€ pro Stunde • Tageshöchstsatz 10€ • 20€ Kaution', // German Description
                     },
-                    quantity: 1,
+                    unit_amount: 2000, // 20.00 EUR (The Deposit Amount)
                 },
-            ],
-            mode: 'payment',
+                quantity: 1,
+            }],
+            mode: 'payment', // Or 'setup' if you are doing pure holds, but 'payment' with manual capture is standard for simple MVPs
             success_url: `${req.protocol}://${req.get('host')}/success.html?session_id={CHECKOUT_SESSION_ID}&deviceId=${deviceId}`,
             cancel_url: `${req.protocol}://${req.get('host')}/index.html`,
         });

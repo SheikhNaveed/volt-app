@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Volt - Rent Powerbank</title>
+    <title>Volt - Power Bank Mieten</title>
     
     <style>
         :root { --primary: #FFA500; --white: #FFFFFF; --dark: #222222; --gray: #F8F9FA; }
@@ -11,7 +11,7 @@
         
         .app-container { width: 100%; max-width: 450px; background-color: var(--white); height: 100%; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
         
-        /* Header with SVG Logo */
+        /* Header */
         .header { background: var(--white); padding: 20px; text-align: center; border-bottom: 1px solid #eee; display: flex; justify-content: center; align-items: center; }
         
         /* Main Content */
@@ -25,9 +25,10 @@
         .price-card { background: var(--gray); padding: 25px; border-radius: 20px; width: 85%; margin-bottom: 30px; }
         .price-big { font-size: 42px; font-weight: 800; color: var(--dark); }
         .price-unit { font-size: 18px; color: #666; font-weight: normal; }
-        .price-details { font-size: 13px; color: #888; margin-top: 8px; }
+        .price-details { font-size: 14px; color: #555; margin-top: 8px; }
+        .deposit-info { font-size: 12px; color: #888; margin-top: 4px; }
 
-        /* Big Button */
+        /* Button */
         .action-area { padding: 30px; width: 100%; box-sizing: border-box; background: var(--white); }
         .rent-btn { background-color: var(--primary); color: var(--white); width: 100%; padding: 22px; border-radius: 18px; border: none; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 10px 25px rgba(255, 165, 0, 0.4); transition: transform 0.1s; }
         .rent-btn:active { transform: scale(0.98); }
@@ -47,29 +48,27 @@
 
         <div class="content">
             <div class="station-icon">🔋</div>
-            
             <div class="station-title">Volt Power Bank Station</div>
-            <div class="station-subtitle">Scan & Go Rental</div>
+            <div class="station-subtitle">Scan & Go</div>
 
             <div class="price-card">
-                <div class="price-big">$1.00 <span class="price-unit">/ hr</span></div>
-                <div class="price-details">Max $10/day • $20 Deposit (Refundable)</div>
+                <div class="price-big">1,00€ <span class="price-unit"> pro Stunde</span></div>
+                <div class="price-details">Tageshöchstsatz 10€</div>
+                <div class="deposit-info">20€ Kaution (wird erstattet)</div>
             </div>
         </div>
 
         <div class="action-area">
-            <button class="rent-btn">Rent Powerbank</button>
-            <div style="text-align: center; margin-top: 15px; color: #ccc; font-size: 12px;">Secure Payment via Stripe 🔒</div>
+            <button class="rent-btn">Power Bank mieten</button>
+            <div style="text-align: center; margin-top: 15px; color: #ccc; font-size: 12px;">Sichere Zahlung via Stripe 🔒</div>
         </div>
     </div>
 
     <script src="https://js.stripe.com/v3/"></script>
     <script>
-        // 1. GET STATION ID (We still need this for the BACKEND, but we don't show it in the UI)
         const urlParams = new URLSearchParams(window.location.search);
         const currentStationId = urlParams.get('id') || 'TEST-STATION';
 
-        // 2. STRIPE LOGIC
         fetch('/config')
             .then(res => res.json())
             .then(config => {
@@ -77,7 +76,7 @@
                 const rentBtn = document.querySelector('.rent-btn');
 
                 rentBtn.addEventListener('click', () => {
-                    rentBtn.innerText = "Processing...";
+                    rentBtn.innerText = "Verarbeite...";
                     rentBtn.style.backgroundColor = "#ccc";
                     
                     fetch('/create-checkout-session', {
@@ -89,7 +88,7 @@
                     .then(session => stripe.redirectToCheckout({ sessionId: session.id }))
                     .catch(err => {
                         console.error(err);
-                        rentBtn.innerText = "Error - Try Again";
+                        rentBtn.innerText = "Fehler - Bitte neu versuchen";
                         rentBtn.style.backgroundColor = "red";
                     });
                 });

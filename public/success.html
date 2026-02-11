@@ -1,42 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unlocking...</title>
+    <title>Gerät Freigeschaltet</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
-        .box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h1 { color: #FFA500; }
-        .status { font-size: 18px; margin-top: 20px; color: #555; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid #FFA500; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; color: #333; }
+        .box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; }
+        h1 { color: #FFA500; font-size: 24px; }
+        .status { font-size: 16px; margin-top: 10px; color: #555; }
+        
+        /* TIMER STYLES */
+        .timer-box { background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-top: 25px; }
+        .timer-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .timer-display { font-size: 32px; font-weight: bold; color: #333; font-family: monospace; margin: 5px 0; }
+        .cost-display { color: #FFA500; font-weight: bold; font-size: 18px; }
+
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #FFA500; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="box">
-        <h1>Payment Successful!</h1>
+        <h1>Zahlung erfolgreich!</h1>
+        
         <div id="loader" class="loader"></div>
-        <div id="status" class="status">Connecting to station...</div>
+        <div id="status" class="status">Verbinde mit Station...</div>
+
+        <div id="active-rental" class="timer-box" style="display: none;">
+            <div class="timer-label">Mietdauer</div>
+            <div class="timer-display" id="timer">00:00:00</div>
+            <div class="cost-display">Aktuelle Kosten: <span id="cost">0,00€</span></div>
+            <div style="font-size: 12px; color: #999; margin-top: 10px;">Bitte entnehme deine Power Bank</div>
+        </div>
     </div>
 
-<script>
-        // 1. Get the Info from the URL
+    <script>
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get('session_id');
         const deviceId = params.get('deviceId');
         const statusDiv = document.getElementById('status');
         const loader = document.getElementById('loader');
+        const rentalBox = document.getElementById('active-rental');
 
-        // 2. SAFETY CHECK: Did we already unlock this specific session?
-        // This prevents the "Refresh" bug
+        // SAFETY CHECK (Double Unlock Prevention)
         if (localStorage.getItem('unlocked_' + sessionId)) {
-            console.log("Block: This session was already used.");
-            statusDiv.innerHTML = "✅ <b>Device Already Unlocked</b><br>Enjoy your charge!";
-            loader.style.display = 'none';
+            showSuccessState();
         } 
         else if (sessionId && deviceId) {
-            // 3. New Session? Okay, tell Backend to Unlock
             fetch('/unlock-device', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -44,23 +55,51 @@
             })
             .then(res => res.json())
             .then(data => {
-                // 4. Show Success AND Set the Safety Lock
                 if (data.success) {
-                    // Mark this session as "DONE" in the browser memory
                     localStorage.setItem('unlocked_' + sessionId, 'true');
-
-                    statusDiv.innerHTML = "✅ <b>Device Unlocked!</b><br>Please take your powerbank.";
-                    loader.style.display = 'none';
+                    // Save START TIME for the timer
+                    if (!localStorage.getItem('startTime_' + sessionId)) {
+                        localStorage.setItem('startTime_' + sessionId, Date.now());
+                    }
+                    showSuccessState();
                 } else {
-                    statusDiv.innerHTML = "❌ Error: " + (data.error || "Unknown error");
+                    statusDiv.innerHTML = "❌ Fehler: " + (data.error || "Unbekannt");
                     loader.style.display = 'none';
                 }
             })
             .catch(err => {
-                statusDiv.innerText = "❌ Connection Failed";
+                statusDiv.innerText = "❌ Verbindungsfehler";
             });
         }
-    </script>
 
+        function showSuccessState() {
+            statusDiv.innerHTML = "✅ <b>Freischaltung erfolgt!</b>";
+            loader.style.display = 'none';
+            rentalBox.style.display = 'block';
+            startTimer();
+        }
+
+        // TIMER LOGIC
+        function startTimer() {
+            const startTime = parseInt(localStorage.getItem('startTime_' + sessionId)) || Date.now();
+            
+            setInterval(() => {
+                const now = Date.now();
+                const diff = Math.floor((now - startTime) / 1000);
+                
+                // Calculate Time
+                const hours = Math.floor(diff / 3600).toString().padStart(2, '0');
+                const minutes = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+                const seconds = (diff % 60).toString().padStart(2, '0');
+                
+                // Calculate Cost (1.00€ per hour = ~0.0166€ per minute)
+                // Minimum fee logic can be added here, for now strictly time-based
+                const cost = (diff / 3600 * 1.00).toFixed(2); 
+
+                document.getElementById('timer').innerText = `${hours}:${minutes}:${seconds}`;
+                document.getElementById('cost').innerText = cost.replace('.', ',') + "€";
+            }, 1000);
+        }
+    </script>
 </body>
 </html>
