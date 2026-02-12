@@ -21,6 +21,8 @@ app.get('/config', (req, res) => {
 // 2. CREATE PAYMENT
 app.post('/create-checkout-session', async (req, res) => {
     try {
+        // 👇 THIS WAS MISSING! 
+        const { deviceId } = req.body;
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [{
