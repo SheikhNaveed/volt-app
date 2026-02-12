@@ -31,9 +31,12 @@ app.post('/create-checkout-session', async (req, res) => {
                     // ... inside server.js ...
 
                     product_data: {
-                        // UPDATED LINE BELOW:
-                        name: 'Volt Power Bank Station (Station ' + deviceId + ')', 
-                        description: '1,00€ pro Stunde • Tageshöchstsatz 10€ • 20€ Kaution',
+                        // 1. REMOVED STATION NAME IN BRACKETS
+                        name: 'Volt Power Bank Station', 
+                        
+                        // 2. CLEANER DESCRIPTION
+                        // (Stripe decides where to wrap lines, but this shorter format keeps 20€ Kaution together)
+                        description: '1,00€ pro Stunde • Max. 10€ pro Tag • 20€ Kaution',
                     },
                     unit_amount: 2000, // 20.00 EUR
 // ...
