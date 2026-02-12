@@ -28,11 +28,15 @@ app.post('/create-checkout-session', async (req, res) => {
             line_items: [{
                 price_data: {
                     currency: 'eur', // CHANGED TO EURO
+                    // ... inside server.js ...
+
                     product_data: {
-                        name: 'Power Bank Miete (Station ' + deviceId + ')', // German Name
-                        description: '1,00€ pro Stunde • Tageshöchstsatz 10€ • 20€ Kaution', // German Description
+                        // UPDATED LINE BELOW:
+                        name: 'Volt Power Bank Station (Station ' + deviceId + ')', 
+                        description: '1,00€ pro Stunde • Tageshöchstsatz 10€ • 20€ Kaution',
                     },
-                    unit_amount: 2000, // 20.00 EUR (The Deposit Amount)
+                    unit_amount: 2000, // 20.00 EUR
+// ...
                 },
                 quantity: 1,
             }],
