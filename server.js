@@ -1,10 +1,8 @@
-// server.js - COMPLETE FILE
-
+// server.js - FINAL VERSION
 require('dotenv').config();
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
 
@@ -13,21 +11,22 @@ app.use(express.static('public'));
 app.use(express.json());
 app.use(cors());
 
-// 1. CONFIG ROUTE (Sends the Public Key to the frontend)
+// 1. CONFIG ROUTE
 app.get('/config', (req, res) => {
     res.json({ stripeKey: process.env.STRIPE_PUBLISHABLE_KEY });
 });
 
-// 2. CREATE CHECKOUT SESSION (Updated with 2.00€ Pricing & Auto-Payments)
+// 2. CREATE CHECKOUT SESSION
 app.post('/create-checkout-session', async (req, res) => {
     try {
         const { deviceId } = req.body; 
 
         const session = await stripe.checkout.sessions.create({
-            // ENABLE ALL WALLETS (PayPal, Google Pay, Apple Pay)
-            automatic_payment_methods: {
-                enabled: true,
-            },
+            // FIX: Explicitly list the methods. 
+            // 'card' includes Google Pay & Apple Pay automatically.
+            // 'paypal' adds the PayPal button.
+            payment_method_types: ['card', 'paypal'],
+            
             line_items: [{
                 price_data: {
                     currency: 'eur',
@@ -55,21 +54,14 @@ app.post('/create-checkout-session', async (req, res) => {
 app.post('/unlock-device', async (req, res) => {
     const { sessionId, deviceId } = req.body;
     console.log(`🔓 Unlocking Device: ${deviceId} for Session: ${sessionId}`);
-
-    // LOGIC: Here we normally talk to the Hardware API.
-    // Since we are validating the flow, we return "Success" to eject the battery.
-    try {
-        // If you have specific hardware API code, paste it here. 
-        // For now, we simulate a successful unlock:
-        res.json({ success: true, message: "Device unlocked successfully" });
-    } catch (error) {
-        console.error("Unlock Error:", error);
-        res.status(500).json({ error: "Failed to unlock device" });
-    }
+    
+    // Simulate Success for MVP
+    res.json({ success: true, message: "Device unlocked successfully" });
 });
 
-// 4. START SERVER
+// 4. START SERVER (Updated to fix Render Timeout)
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-    console.log(`Volt Server running on http://localhost:${PORT}`);
+// We add '0.0.0.0' to ensure Render can connect to the port
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Volt Server running on port ${PORT}`);
 });
