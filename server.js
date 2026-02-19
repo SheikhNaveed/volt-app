@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const cors = require('cors');
-
+const axios = require('axios');
 const app = express();
 
 // Middleware
@@ -53,13 +53,34 @@ app.post('/create-checkout-session', async (req, res) => {
 // 3. UNLOCK DEVICE ROUTE
 app.post('/unlock-device', async (req, res) => {
     const { sessionId, deviceId } = req.body;
+    console.log(`🔓 Unlocking Device: ${deviceId} for Session: ${sessionId}`);
     
     try {
-        // YOUR HARDWARE API CODE GOES HERE
-        // e.g., await axios.post('https://api.bajie.../unlock', { station: deviceId })
+        const response = await axios.post(
+            'https://developer.chargenow.top/cdb-open-api/v1/rent/order/create',
+            new URLSearchParams({
+                deviceId: deviceId 
+            }).toString(),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                auth: {
+                    username: 'HaloMadhosh',
+                    // Please insert your API password here. 
+                    // I have masked it for security, but it ends in .2025
+                    password: 'YOUR_PASSWORD_HERE' 
+                }
+            }
+        );
+
+        if (response.data) {
+            console.log("Hardware API Response:", response.data);
+        }
 
         res.json({ success: true, message: "Device unlocked successfully" });
     } catch (error) {
+        console.error("Hardware unlock failed:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Hardware unlock failed" });
     }
 });
