@@ -53,10 +53,15 @@ app.post('/create-checkout-session', async (req, res) => {
 // 3. UNLOCK DEVICE ROUTE
 app.post('/unlock-device', async (req, res) => {
     const { sessionId, deviceId } = req.body;
-    console.log(`🔓 Unlocking Device: ${deviceId} for Session: ${sessionId}`);
     
-    // Simulate Success for MVP
-    res.json({ success: true, message: "Device unlocked successfully" });
+    try {
+        // YOUR HARDWARE API CODE GOES HERE
+        // e.g., await axios.post('https://api.bajie.../unlock', { station: deviceId })
+
+        res.json({ success: true, message: "Device unlocked successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Hardware unlock failed" });
+    }
 });
 
 // 4. START SERVER (Updated to fix Render Timeout)
