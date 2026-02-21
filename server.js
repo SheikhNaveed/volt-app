@@ -69,7 +69,7 @@ app.post('/unlock-device', async (req, res) => {
                     username: 'HaloMadhosh',
                     // Please insert your API password here. 
                     // I have masked it for security, but it ends in .2025
-                    password: 'YOUR_PASSWORD_HERE' 
+                    password: 'HaloMadhosh.2025' 
                 }
             }
         );
