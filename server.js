@@ -9,6 +9,7 @@ const app = express();
 // Middleware
 app.use(express.static('public'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Added to read ChargeNow webhooks
 app.use(cors());
 
 // 1. CONFIG ROUTE
@@ -22,11 +23,7 @@ app.post('/create-checkout-session', async (req, res) => {
         const { deviceId } = req.body; 
 
         const session = await stripe.checkout.sessions.create({
-            // FIX: Explicitly list the methods. 
-            // 'card' includes Google Pay & Apple Pay automatically.
-            // 'paypal' adds the PayPal button.
             payment_method_types: ['card', 'paypal'],
-            
             line_items: [{
                 price_data: {
                     currency: 'eur',
@@ -34,7 +31,7 @@ app.post('/create-checkout-session', async (req, res) => {
                         name: 'Volt Power Bank Station',
                         description: '2,00€ pro 30 Min. • Max. 10€ pro Tag • 20€ Kaution',
                     },
-                    unit_amount: 2000, // 20.00 EUR Deposit
+                    unit_amount: 2000, 
                 },
                 quantity: 1,
             }],
@@ -59,7 +56,8 @@ app.post('/unlock-device', async (req, res) => {
         const response = await axios.post(
             'https://developer.chargenow.top/cdb-open-api/v1/rent/order/create',
             new URLSearchParams({
-                deviceId: deviceId 
+                deviceId: deviceId,
+                callbackURL: 'https://volt-app-s42y.onrender.com/api/hardware-webhook' 
             }).toString(),
             {
                 headers: {
@@ -67,8 +65,6 @@ app.post('/unlock-device', async (req, res) => {
                 },
                 auth: {
                     username: 'HaloMadhosh',
-                    // Please insert your API password here. 
-                    // I have masked it for security, but it ends in .2025
                     password: 'HaloMadhosh.2025' 
                 }
             }
@@ -85,9 +81,15 @@ app.post('/unlock-device', async (req, res) => {
     }
 });
 
-// 4. START SERVER (Updated to fix Render Timeout)
+// 4. HARDWARE WEBHOOK RECEIVER (Prevents the ChargeNow 500 Crash)
+app.post('/api/hardware-webhook', (req, res) => {
+    console.log("📥 Webhook received from ChargeNow:", req.body);
+    // We MUST send a 200 OK back so their API knows we received it
+    res.status(200).send("success");
+});
+
+// 5. START SERVER 
 const PORT = process.env.PORT || 10000;
-// We add '0.0.0.0' to ensure Render can connect to the port
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Volt Server running on port ${PORT}`);
 });
