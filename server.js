@@ -24,6 +24,13 @@ app.post('/create-checkout-session', async (req, res) => {
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card', 'paypal'],
+            const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card', 'paypal'],
+            
+            // ADD THIS BLOCK TO CHANGE THE APPLE PAY / BANK STATEMENT TEXT
+            payment_intent_data: {
+                statement_descriptor: 'Volt Pfand'
+            },
             line_items: [{
                 price_data: {
                     currency: 'eur',
