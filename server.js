@@ -5,13 +5,14 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const cors = require('cors');
 const axios = require('axios');
 const app = express();
+
 // Short-term memory for active rentals
 const activeRentals = {};
 
 // Middleware
 app.use(express.static('public'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Added to read ChargeNow webhooks
+app.use(express.urlencoded({ extended: true })); 
 app.use(cors());
 
 // 1. CONFIG ROUTE
@@ -24,8 +25,7 @@ app.post('/create-checkout-session', async (req, res) => {
     try {
         const { deviceId } = req.body; 
 
-        // --- NEW: OFFLINE BLOCKER ---
-        // 1. Check Station Status via ChargeNow API
+        // --- OFFLINE PRE-CHECK BLOCKER ---
         const statusResponse = await axios.get(
             `https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=${deviceId}`,
             {
@@ -37,15 +37,14 @@ app.post('/create-checkout-session', async (req, res) => {
             }
         );
 
-        // Parse the response to see if the cabinet is online
         const cabinet = statusResponse.data?.data?.cabinet;
         if (!cabinet || cabinet.online === false) {
             console.log(`⚠️ Blocked checkout: Station ${deviceId} is offline.`);
             return res.status(400).json({ error: "STATION_OFFLINE" });
         }
-        // -----------------------------
+        // ---------------------------------
 
-        // 2. Create Stripe Session
+        // 3. Create Stripe Session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card', 'paypal'],
             payment_intent_data: {
@@ -74,7 +73,7 @@ app.post('/create-checkout-session', async (req, res) => {
     }
 });
 
-// 3. UNLOCK DEVICE ROUTE
+// 4. UNLOCK DEVICE ROUTE
 app.post('/unlock-device', async (req, res) => {
     const { sessionId, deviceId } = req.body;
     console.log(`🔓 Unlocking Device: ${deviceId} for Session: ${sessionId}`);
@@ -99,8 +98,13 @@ app.post('/unlock-device', async (req, res) => {
 
         if (response.data) {
             console.log("Hardware API Response:", response.data);
+            // NEW: If ChargeNow throws an error code (like 2004), stop the success message
+            if (response.data.code !== 0) {
+                throw new Error(response.data.msg || "Station rejected unlock command");
+            }
         }
-// Save to our short-term memory
+
+        // Save to our short-term memory
         activeRentals[sessionId] = { status: 'renting' };
 
         res.json({ success: true, message: "Device unlocked successfully" });
@@ -109,11 +113,10 @@ app.post('/unlock-device', async (req, res) => {
         res.status(500).json({ error: "Hardware unlock failed" });
     }
 });
-// 3.5 CHECK RENTAL STATUS (Polling Route)
+
+// 5. CHECK RENTAL STATUS (Polling Route)
 app.get('/api/check-status', (req, res) => {
     const { sessionId } = req.query;
-    
-    // Check our memory for this session
     if (activeRentals[sessionId]) {
         res.json({ status: activeRentals[sessionId].status });
     } else {
@@ -121,14 +124,13 @@ app.get('/api/check-status', (req, res) => {
     }
 });
 
-// 4. HARDWARE WEBHOOK RECEIVER (Prevents the ChargeNow 500 Crash)
+// 6. HARDWARE WEBHOOK RECEIVER
 app.post('/api/hardware-webhook', (req, res) => {
     console.log("📥 Webhook received from ChargeNow:", req.body);
-    // We MUST send a 200 OK back so their API knows we received it
     res.status(200).send("success");
 });
 
-// 5. START SERVER 
+// 7. START SERVER 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Volt Server running on port ${PORT}`);
