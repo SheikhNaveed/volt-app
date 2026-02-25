@@ -65,7 +65,7 @@
     </div>
 
     <script src="https://js.stripe.com/v3/"></script>
-    <script>
+   <script>
         const urlParams = new URLSearchParams(window.location.search);
         const currentStationId = urlParams.get('id') || 'TEST-STATION';
 
@@ -84,11 +84,24 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ deviceId: currentStationId })
                     })
-                    .then(response => response.json())
+                    .then(async response => {
+                        const data = await response.json();
+                        // If the server blocked the request, throw the exact error to the catch block
+                        if (!response.ok) {
+                            throw new Error(data.error || "Unknown Error");
+                        }
+                        return data;
+                    })
                     .then(session => stripe.redirectToCheckout({ sessionId: session.id }))
                     .catch(err => {
                         console.error(err);
-                        rentBtn.innerText = "Fehler - Bitte neu versuchen";
+                        
+                        // NEW: Show specific offline message
+                        if (err.message === "STATION_OFFLINE") {
+                            rentBtn.innerText = "Station ist offline";
+                        } else {
+                            rentBtn.innerText = "Fehler - Bitte neu versuchen";
+                        }
                         rentBtn.style.backgroundColor = "red";
                     });
                 });

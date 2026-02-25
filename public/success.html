@@ -7,21 +7,15 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding: 20px; background: #f4f4f4; color: #333; display: flex; flex-direction: column; min-height: 90vh; }
         .box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; flex: 1; }
-        
         h1 { color: #FFA500; font-size: 24px; margin-bottom: 5px; }
-        
         .status { font-size: 18px; font-weight: bold; margin-top: 15px; color: #333; }
         .instruction { font-size: 14px; color: #666; margin-top: 5px; margin-bottom: 20px; }
-        
         .timer-box { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 20px; margin-top: 15px; }
         .timer-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
         .timer-display { font-size: 36px; font-weight: 700; color: #222; font-family: monospace; margin: 5px 0; }
         .cost-display { color: #FFA500; font-weight: 600; font-size: 16px; margin-top: 5px; }
-
-        /* NEW FOOTER STYLE */
         .footer-note { font-size: 12px; color: #999; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
         .footer-note a { color: #999; text-decoration: none; }
-
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #FFA500; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -56,6 +50,8 @@
         const instructionDiv = document.getElementById('instruction-text');
         const loader = document.getElementById('loader');
         const rentalBox = document.getElementById('active-rental');
+        
+        let timerInterval; 
 
         if (localStorage.getItem('unlocked_' + sessionId)) {
             showSuccessState();
@@ -90,12 +86,13 @@
             loader.style.display = 'none';
             rentalBox.style.display = 'block';
             startTimer();
+            startPolling(); // Starts asking the server for updates
         }
 
         function startTimer() {
             const startTime = parseInt(localStorage.getItem('startTime_' + sessionId)) || Date.now();
             
-            setInterval(() => {
+            timerInterval = setInterval(() => {
                 const now = Date.now();
                 const diff = Math.floor((now - startTime) / 1000);
                 
@@ -103,12 +100,29 @@
                 const minutes = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
                 const seconds = (diff % 60).toString().padStart(2, '0');
                 
-                // NEW PRICING MATH: 2.00€ per 30 mins = 4.00€ per hour
                 const cost = (diff / 3600 * 4.00).toFixed(2); 
 
                 document.getElementById('timer').innerText = `${hours}:${minutes}:${seconds}`;
                 document.getElementById('cost').innerText = cost.replace('.', ',') + "€";
             }, 1000);
+        }
+
+        function startPolling() {
+            const pollInterval = setInterval(() => {
+                fetch(`/api/check-status?sessionId=${sessionId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'returned') {
+                        clearInterval(timerInterval); 
+                        clearInterval(pollInterval);  
+                        
+                        statusDiv.innerHTML = "🔋 Power Bank zurückgegeben!";
+                        instructionDiv.innerHTML = "Vielen Dank für die Nutzung von Volt.";
+                        document.querySelector('.timer-label').innerText = "Abgeschlossen";
+                    }
+                })
+                .catch(err => console.error("Polling error:", err));
+            }, 5000); 
         }
     </script>
 </body>

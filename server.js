@@ -5,6 +5,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const cors = require('cors');
 const axios = require('axios');
 const app = express();
+// Short-term memory for active rentals
+const activeRentals = {};
 
 // Middleware
 app.use(express.static('public'));
@@ -22,12 +24,30 @@ app.post('/create-checkout-session', async (req, res) => {
     try {
         const { deviceId } = req.body; 
 
+        // --- NEW: OFFLINE BLOCKER ---
+        // 1. Check Station Status via ChargeNow API
+        const statusResponse = await axios.get(
+            `https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=${deviceId}`,
+            {
+                headers: { 'Content-Type': 'application/json' },
+                auth: {
+                    username: 'HaloMadhosh',
+                    password: 'HaloMadhosh.2025' 
+                }
+            }
+        );
+
+        // Parse the response to see if the cabinet is online
+        const cabinet = statusResponse.data?.data?.cabinet;
+        if (!cabinet || cabinet.online === false) {
+            console.log(`⚠️ Blocked checkout: Station ${deviceId} is offline.`);
+            return res.status(400).json({ error: "STATION_OFFLINE" });
+        }
+        // -----------------------------
+
+        // 2. Create Stripe Session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card', 'paypal'],
-            const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card', 'paypal'],
-            
-            // ADD THIS BLOCK TO CHANGE THE APPLE PAY / BANK STATEMENT TEXT
             payment_intent_data: {
                 statement_descriptor: 'Volt Pfand'
             },
@@ -49,7 +69,7 @@ app.post('/create-checkout-session', async (req, res) => {
 
         res.json({ id: session.id });
     } catch (error) {
-        console.error("Stripe Error:", error);
+        console.error("Stripe/API Error:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -80,11 +100,24 @@ app.post('/unlock-device', async (req, res) => {
         if (response.data) {
             console.log("Hardware API Response:", response.data);
         }
+// Save to our short-term memory
+        activeRentals[sessionId] = { status: 'renting' };
 
         res.json({ success: true, message: "Device unlocked successfully" });
     } catch (error) {
         console.error("Hardware unlock failed:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Hardware unlock failed" });
+    }
+});
+// 3.5 CHECK RENTAL STATUS (Polling Route)
+app.get('/api/check-status', (req, res) => {
+    const { sessionId } = req.query;
+    
+    // Check our memory for this session
+    if (activeRentals[sessionId]) {
+        res.json({ status: activeRentals[sessionId].status });
+    } else {
+        res.json({ status: 'unknown' });
     }
 });
 
