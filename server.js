@@ -25,20 +25,22 @@ app.post('/create-checkout-session', async (req, res) => {
     try {
         const { deviceId } = req.body; 
 
-        // --- OFFLINE PRE-CHECK BLOCKER ---
+       // --- OFFLINE PRE-CHECK BLOCKER ---
         const statusResponse = await axios.get(
             `https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=${deviceId}`,
             {
                 headers: { 'Content-Type': 'application/json' },
-                auth: {
-                    username: 'HaloMadhosh',
-                    password: 'HaloMadhosh.2025' 
-                }
+                auth: { username: 'HaloMadhosh', password: 'HaloMadhosh.2025' }
             }
         );
 
         const cabinet = statusResponse.data?.data?.cabinet;
-        if (!cabinet || cabinet.online === false) {
+        console.log(`🔍 ChargeNow Pre-Check Data for ${deviceId}:`, cabinet); // Lets us see exactly what they send
+        
+        // Aggressively check if it's strictly online. Treat anything else (0, false, null, undefined) as offline.
+        const isOnline = cabinet && (cabinet.online === true || cabinet.online === 1 || cabinet.online === "1" || cabinet.online === "true");
+
+        if (!isOnline) {
             console.log(`⚠️ Blocked checkout: Station ${deviceId} is offline.`);
             return res.status(400).json({ error: "STATION_OFFLINE" });
         }
@@ -98,22 +100,28 @@ app.post('/unlock-device', async (req, res) => {
 
         if (response.data) {
             console.log("Hardware API Response:", response.data);
-            // NEW: If ChargeNow throws an error code (like 2004), stop the success message
             if (response.data.code !== 0) {
                 throw new Error(response.data.msg || "Station rejected unlock command");
             }
+            
+            // Extract the tradeNo ChargeNow gave us
+            const tradeNo = response.data.data.tradeNo;
+
+            // Save BOTH the sessionId and tradeNo to our memory
+            activeRentals[sessionId] = { 
+                status: 'renting',
+                tradeNo: tradeNo 
+            };
         }
 
-        // Save to our short-term memory
-        activeRentals[sessionId] = { status: 'renting' };
-
+        // Send the success response exactly ONCE
         res.json({ success: true, message: "Device unlocked successfully" });
+
     } catch (error) {
         console.error("Hardware unlock failed:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Hardware unlock failed" });
     }
 });
-
 // 5. CHECK RENTAL STATUS (Polling Route)
 app.get('/api/check-status', (req, res) => {
     const { sessionId } = req.query;
@@ -126,10 +134,32 @@ app.get('/api/check-status', (req, res) => {
 
 // 6. HARDWARE WEBHOOK RECEIVER
 app.post('/api/hardware-webhook', (req, res) => {
-    console.log("📥 Webhook received from ChargeNow:", req.body);
+    console.log("📥 Webhook received:", req.body);
+    
+    const statusString = String(req.body.status);
+    const incomingTradeNo = String(req.body.tradeNo);
+    
+    if (statusString === '2') {
+        console.log(`🔋 Return Signal for: ${incomingTradeNo}. Checking memory...`);
+        console.log("Current active sessions in memory:", Object.keys(activeRentals));
+
+        let matchFound = false;
+        for (const [sessionId, data] of Object.entries(activeRentals)) {
+            if (String(data.tradeNo) === incomingTradeNo) {
+                console.log(`✅ MATCH! Stopping timer for session: ${sessionId}`);
+                activeRentals[sessionId].status = 'returned';
+                activeRentals[sessionId].returnTime = Date.now(); // Store when it was returned
+                matchFound = true;
+                break;
+            }
+        }
+        
+        if (!matchFound) {
+            console.log(`❌ NO MATCH found for ${incomingTradeNo}. This happens if the server restarted.`);
+        }
+    }
     res.status(200).send("success");
 });
-
 // 7. START SERVER 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {

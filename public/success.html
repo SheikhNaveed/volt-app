@@ -117,12 +117,13 @@
                         clearInterval(pollInterval);  
                         
                         statusDiv.innerHTML = "🔋 Power Bank zurückgegeben!";
-                        instructionDiv.innerHTML = "Vielen Dank für die Nutzung von Volt.";
+                        instructionDiv.innerHTML = "Vielen Dank. Dein Mietvorgang wurde beendet.";
                         document.querySelector('.timer-label').innerText = "Abgeschlossen";
+                        document.querySelector('.timer-display').style.color = "#4CAF50"; // Turn green
                     }
                 })
                 .catch(err => console.error("Polling error:", err));
-            }, 5000); 
+            }, 2000); // Changed to 2 seconds for instant feedback
         }
     </script>
 </body>
