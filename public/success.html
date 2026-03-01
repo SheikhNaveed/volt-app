@@ -85,8 +85,22 @@
             instructionDiv.style.display = 'block';
             loader.style.display = 'none';
             rentalBox.style.display = 'block';
-            startTimer();
-            startPolling(); // Starts asking the server for updates
+            
+            // Check if it was already marked as returned before starting the timer
+            if (localStorage.getItem('status_' + sessionId) === 'returned') {
+                showReturnedUI();
+            } else {
+                startTimer();
+                startPolling(); // Starts asking the server for updates
+            }
+        }
+
+        function showReturnedUI() {
+            if (timerInterval) clearInterval(timerInterval);
+            statusDiv.innerHTML = "🔋 Power Bank zurückgegeben!";
+            instructionDiv.innerHTML = "Vielen Dank. Dein Mietvorgang wurde beendet.";
+            document.querySelector('.timer-label').innerText = "Abgeschlossen";
+            document.querySelector('.timer-display').style.color = "#4CAF50"; // Turn green
         }
 
         function startTimer() {
@@ -113,17 +127,14 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'returned') {
-                        clearInterval(timerInterval); 
                         clearInterval(pollInterval);  
-                        
-                        statusDiv.innerHTML = "🔋 Power Bank zurückgegeben!";
-                        instructionDiv.innerHTML = "Vielen Dank. Dein Mietvorgang wurde beendet.";
-                        document.querySelector('.timer-label').innerText = "Abgeschlossen";
-                        document.querySelector('.timer-display').style.color = "#4CAF50"; // Turn green
+                        // Save the returned status locally so refresh doesn't break it
+                        localStorage.setItem('status_' + sessionId, 'returned');
+                        showReturnedUI();
                     }
                 })
                 .catch(err => console.error("Polling error:", err));
-            }, 2000); // Changed to 2 seconds for instant feedback
+            }, 2000); 
         }
     </script>
 </body>
