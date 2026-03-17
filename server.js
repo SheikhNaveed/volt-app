@@ -1,4 +1,4 @@
-// server.js - FINAL VERSION
+// server.js
 require('dotenv').config();
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -8,6 +8,9 @@ const app = express();
 
 // Short-term memory for active rentals
 const activeRentals = {};
+
+// Lock to prevent double-unlocks for the same session
+const unlockInProgress = new Set();
 
 // Middleware
 app.use(express.static('public'));
@@ -25,7 +28,7 @@ app.post('/create-checkout-session', async (req, res) => {
     try {
         const { deviceId } = req.body; 
 
-       // --- OFFLINE PRE-CHECK BLOCKER ---
+        // --- OFFLINE PRE-CHECK BLOCKER ---
         const statusResponse = await axios.get(
             `https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=${deviceId}`,
             {
@@ -35,9 +38,8 @@ app.post('/create-checkout-session', async (req, res) => {
         );
 
         const cabinet = statusResponse.data?.data?.cabinet;
-        console.log(`🔍 ChargeNow Pre-Check Data for ${deviceId}:`, cabinet); // Lets us see exactly what they send
+        console.log(`🔍 ChargeNow Pre-Check Data for ${deviceId}:`, cabinet);
         
-        // Aggressively check if it's strictly online. Treat anything else (0, false, null, undefined) as offline.
         const isOnline = cabinet && (cabinet.online === true || cabinet.online === 1 || cabinet.online === "1" || cabinet.online === "true");
 
         if (!isOnline) {
@@ -46,9 +48,9 @@ app.post('/create-checkout-session', async (req, res) => {
         }
         // ---------------------------------
 
-        // 3. Create Stripe Session
+        // Create Stripe Session — no payment_method_types means Stripe
+        // auto-enables all active methods (PayPal, Apple Pay, Google Pay, card)
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card', 'paypal'],
             payment_intent_data: {
                 statement_descriptor: 'Volt Pfand'
             },
@@ -65,7 +67,7 @@ app.post('/create-checkout-session', async (req, res) => {
             }],
             mode: 'payment',
             success_url: `${req.protocol}://${req.get('host')}/success.html?session_id={CHECKOUT_SESSION_ID}&deviceId=${deviceId}`,
-            cancel_url: `${req.protocol}://${req.get('host')}/index.html`,
+            cancel_url: `${req.protocol}://${req.get('host')}/index.html?id=${deviceId}`,
         });
 
         res.json({ id: session.id });
@@ -78,6 +80,21 @@ app.post('/create-checkout-session', async (req, res) => {
 // 4. UNLOCK DEVICE ROUTE
 app.post('/unlock-device', async (req, res) => {
     const { sessionId, deviceId } = req.body;
+
+    // --- DOUBLE-UNLOCK PREVENTION ---
+    // If this session already has an active rental, return success immediately
+    if (activeRentals[sessionId]) {
+        console.log(`⚠️ Session ${sessionId} already unlocked. Skipping duplicate unlock.`);
+        return res.json({ success: true, message: "Already unlocked" });
+    }
+
+    // If an unlock is currently in progress for this session, block the second request
+    if (unlockInProgress.has(sessionId)) {
+        console.log(`⚠️ Unlock already in progress for session ${sessionId}. Blocking duplicate.`);
+        return res.json({ success: true, message: "Unlock in progress" });
+    }
+
+    unlockInProgress.add(sessionId);
     console.log(`🔓 Unlocking Device: ${deviceId} for Session: ${sessionId}`);
     
     try {
@@ -104,24 +121,24 @@ app.post('/unlock-device', async (req, res) => {
                 throw new Error(response.data.msg || "Station rejected unlock command");
             }
             
-            // Extract the tradeNo ChargeNow gave us
             const tradeNo = response.data.data.tradeNo;
 
-            // Save BOTH the sessionId and tradeNo to our memory
             activeRentals[sessionId] = { 
                 status: 'renting',
                 tradeNo: tradeNo 
             };
         }
 
-        // Send the success response exactly ONCE
+        unlockInProgress.delete(sessionId);
         res.json({ success: true, message: "Device unlocked successfully" });
 
     } catch (error) {
+        unlockInProgress.delete(sessionId); // Always release the lock on failure
         console.error("Hardware unlock failed:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Hardware unlock failed" });
     }
 });
+
 // 5. CHECK RENTAL STATUS (Polling Route)
 app.get('/api/check-status', (req, res) => {
     const { sessionId } = req.query;
@@ -148,7 +165,7 @@ app.post('/api/hardware-webhook', (req, res) => {
             if (String(data.tradeNo) === incomingTradeNo) {
                 console.log(`✅ MATCH! Stopping timer for session: ${sessionId}`);
                 activeRentals[sessionId].status = 'returned';
-                activeRentals[sessionId].returnTime = Date.now(); // Store when it was returned
+                activeRentals[sessionId].returnTime = Date.now();
                 matchFound = true;
                 break;
             }
@@ -160,6 +177,7 @@ app.post('/api/hardware-webhook', (req, res) => {
     }
     res.status(200).send("success");
 });
+
 // 7. START SERVER 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
